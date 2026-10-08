@@ -1,0 +1,57 @@
+#!/bin/bash
+MUSIC_DIR="${XDG_MUSIC_DIR:-$HOME/Music}"
+[ -d "$MUSIC_DIR" ] || {
+    echo "Music folder not found: $MUSIC_DIR"
+    exit 1
+}
+AUDIO_EXTS=(mp3 flac ogg m4a opus wav aac wma)
+audio_match=()
+for ext in "${AUDIO_EXTS[@]}"; do
+    audio_match+=(-o -iname "*.$ext")
+done
+audio_match=("${audio_match[@]:1}")
+TERMINATE_TAG="__TERMINATE__"
+folders=$(find -L "$MUSIC_DIR" -mindepth 1 -maxdepth 1 -type d \
+    ! -iname ".*" \
+    -printf '󱍙‎ %f\t%f\n' | sort)
+songs=$(find -L "$MUSIC_DIR" -mindepth 2 -maxdepth 2 -type f \
+    ! -ipath "$MUSIC_DIR/.*/*" \
+    \( "${audio_match[@]}" \) |
+    while read -r file; do
+        printf '♪ %s\t%s\n' "$(basename "$file")" "${file#$MUSIC_DIR/}"
+    done | sort)
+list=""
+if pgrep -x mpv >/dev/null; then
+    list+="  𝗧𝗘𝗥𝗠𝗜𝗡𝗔𝗧𝗘"$'\t'"$TERMINATE_TAG"$'\n'
+fi
+list+="${folders}"$'\n'
+list+="${songs}"
+selected=$(printf '%s\n' "$list" | \
+    fuzzel --config ~/.config/fuzzel/music.ini -d \
+        --with-nth=1 --accept-nth=2)
+[ -z "$selected" ] && exit
+if [[ "$selected" == "$TERMINATE_TAG" ]]; then
+    pkill -x mpv
+    exit
+fi
+pkill -x mpv
+if [ -d "$MUSIC_DIR/$selected" ]; then
+    mpv \
+        --no-video \
+        --force-window=no \
+        --loop-playlist \
+        --shuffle \
+        "$MUSIC_DIR/$selected" \
+        >/dev/null 2>&1 &
+else
+    song_path="$MUSIC_DIR/$selected"
+    folder="$(dirname "$song_path")"
+    mapfile -t rest < <(find -L "$folder" -maxdepth 1 -type f \
+        \( "${audio_match[@]}" \) ! -path "$song_path" | shuf)
+    mpv \
+        --no-video \
+        --force-window=no \
+        --loop-playlist \
+        "$song_path" "${rest[@]}" \
+        >/dev/null 2>&1 &
+fi
