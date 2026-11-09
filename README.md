@@ -9,3 +9,10 @@ mkdir -p ~/.local/bin
 cp PickThisSongForMe/music-picker ~/.local/bin/
 chmod +x ~/.local/bin/music-picker
 ```
+
+#if you cant run "music-picker" in terminal, run  --
+ micro ~/.bash_profile
+ #add:  export PATH="$HOME/.local/bin:$PATH"
+ source ~/.bash_profile
+
+#then add keyboard shortcut (Super+M)
