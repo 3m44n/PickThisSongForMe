@@ -1,6 +1,6 @@
 # PickThisSongForMe
 (personal stuff but i like keeping it public)
-bash
+
 ```
 git clone https://github.com/3m44n/PickThisSongForMe
 cd PickThisSongForMe/
